@@ -1,7 +1,10 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Bindings.Cancellation;
 using Microsoft.Azure.WebJobs.Host.Bindings.Data;
@@ -10,14 +13,35 @@ using Microsoft.Azure.WebJobs.Host.Bindings.StorageAccount;
 using Microsoft.Azure.WebJobs.Host.Blobs;
 using Microsoft.Azure.WebJobs.Host.Blobs.Bindings;
 using Microsoft.Azure.WebJobs.Host.Executors;
+using Microsoft.Azure.WebJobs.Host.Extensions;
 using Microsoft.Azure.WebJobs.Host.Queues;
 using Microsoft.Azure.WebJobs.Host.Queues.Bindings;
 using Microsoft.Azure.WebJobs.Host.Tables;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Host.Indexers
 {
-    internal static class DefaultBindingProvider
+    // Extension representing  builtin types. 
+    internal class DefaultBindingProvider : ExtensionBase
     {
+        private static readonly Type[] BuiltinAttributes = new Type[] 
+        {
+            typeof(QueueAttribute),
+            typeof(QueueTriggerAttribute),
+            typeof(TableAttribute),
+            typeof(BlobAttribute),
+            typeof(BlobTriggerAttribute)
+        };
+
+        public override IEnumerable<Type> ExposedAttributes
+        {
+            get
+            {
+                return BuiltinAttributes;
+            }
+        }
+
+        // $$$ for full consistency, this should be in the Initialize method. 
         public static IBindingProvider Create(
             INameResolver nameResolver,
             IConverterManager converterManager,
@@ -61,6 +85,60 @@ namespace Microsoft.Azure.WebJobs.Host.Indexers
             IBindingProvider bindingProvider = new CompositeBindingProvider(innerProviders);
             bindingProviderAccessor.SetValue(bindingProvider);
             return bindingProvider;
-        }      
+        }
+
+        protected internal override Task InitializeAsync(JobHostConfiguration config, JObject hostMetadata)
+        {
+            if (hostMetadata == null)
+            {
+                return Task.FromResult(0);
+            }
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            // $$$ We should be albe to use some reflection to collapse this. 
+            // $$$ Copied from Script c:\dev\afunc\script2\src\webjobs.script\binding\webjobscorescriptbindingprovider.cs
+            JObject configSection = (JObject)hostMetadata["queues"];
+            JToken value = null;
+            if (configSection != null)
+            {
+                if (configSection.TryGetValue("maxPollingInterval", out value))
+                {
+                    config.Queues.MaxPollingInterval = TimeSpan.FromMilliseconds((int)value);
+                }
+                if (configSection.TryGetValue("batchSize", out value))
+                {
+                    config.Queues.BatchSize = (int)value;
+                }
+                if (configSection.TryGetValue("maxDequeueCount", out value))
+                {
+                    config.Queues.MaxDequeueCount = (int)value;
+                }
+                if (configSection.TryGetValue("newBatchThreshold", out value))
+                {
+                    config.Queues.NewBatchThreshold = (int)value;
+                }
+                if (configSection.TryGetValue("visibilityTimeout", out value))
+                {
+                    config.Queues.VisibilityTimeout = TimeSpan.Parse((string)value, CultureInfo.InvariantCulture);
+                }
+            }
+
+            // Apply Blobs configuration
+            config.Blobs.CentralizedPoisonQueue = true;   // TEMP : In the next release we'll remove this and accept the core SDK default
+            configSection = (JObject)hostMetadata["blobs"];
+            value = null;
+            if (configSection != null)
+            {
+                if (configSection.TryGetValue("centralizedPoisonQueue", out value))
+                {
+                    config.Blobs.CentralizedPoisonQueue = (bool)value;
+                }
+            }
+
+            return Task.FromResult(0);
+        }
     }
 }
