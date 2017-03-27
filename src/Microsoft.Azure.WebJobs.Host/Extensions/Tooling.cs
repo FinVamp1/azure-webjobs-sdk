@@ -75,8 +75,16 @@ namespace Microsoft.Azure.WebJobs.Host
 
         public Assembly TryResolveAssembly(string assemblyName)
         {
+            // Name
+            // Name, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+
             Assembly assembly;
-            _resolvedAssemblies.TryGetValue(assemblyName, out assembly);
+            if (!_resolvedAssemblies.TryGetValue(assemblyName, out assembly))
+            {
+                // If we're passed in the full name, compare just the name. 
+                var nameOnly = new AssemblyName(assemblyName).Name;
+                _resolvedAssemblies.TryGetValue(nameOnly, out assembly);
+            }
             return assembly;
         }
 
@@ -94,17 +102,23 @@ namespace Microsoft.Azure.WebJobs.Host
                 this._extensions[attributeType] = extension;
             }
 
+            AddAssembly(extension.GetType().Assembly);
             if (extension.ResolvedAssemblies != null)
             {
                 foreach (var resolvedAssembly in extension.ResolvedAssemblies)
                 {
-                    string name = resolvedAssembly.GetName().Name;
-                    _resolvedAssemblies[name] = resolvedAssembly;
+                    AddAssembly(resolvedAssembly);
                 }
-            }
+            }            
 
             _extensionList.Add(extension);
             await extension.InitializeAsync(_config, hostMetadata);
+        }
+
+        private void AddAssembly(Assembly assembly)
+        {
+            string name = assembly.GetName().Name;
+            _resolvedAssemblies[name] = assembly;
         }
 
         // By convention, typeof(EventHubAttribute) --> "EventHub"

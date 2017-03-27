@@ -33,6 +33,10 @@ namespace Microsoft.Azure.WebJobs.Host.UnitTests
             Assembly asm = tooling.TryResolveAssembly(typeof(Widget).Assembly.GetName().Name);
             Assert.Same(asm, typeof(Widget).Assembly);
 
+            // check with full name 
+            Assembly asm2= tooling.TryResolveAssembly(typeof(Widget).Assembly.GetName().FullName);
+            Assert.Same(asm2, typeof(Widget).Assembly);
+
             var extensions = tooling.Extensions.ToArray();
             Assert.Equal(1, extensions.Length);
             Assert.Equal(ext, extensions[0]);
