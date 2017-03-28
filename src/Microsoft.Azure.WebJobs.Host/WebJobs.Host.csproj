@@ -400,7 +400,6 @@
     <Compile Include="Blobs\Listeners\IBlobScanInfoManager.cs" />
     <Compile Include="Blobs\Listeners\StorageBlobScanInfoManager.cs" />
     <Compile Include="Blobs\StorageBlobToCloudAppendBlobConverter.cs" />
-    <Compile Include="Config\BindingAttribute.cs" />
     <Compile Include="Config\FluentBindingRule.cs" />
     <Compile Include="Config\ServiceProviderWrapper.cs" />
     <Compile Include="DefaultNameResolver.cs" />
