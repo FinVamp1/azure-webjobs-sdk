@@ -18,10 +18,8 @@ using Microsoft.Azure.WebJobs.Host.Tables;
 
 namespace Microsoft.Azure.WebJobs.Host.Indexers
 {
-    // Extension representing  builtin types. 
-    internal class DefaultBindingProvider : IExtensionConfigProvider
+    internal static class DefaultBindingProvider
     {
-        // $$$ for full consistency, this should be in the Initialize method. 
         public static IBindingProvider Create(
             INameResolver nameResolver,
             IConverterManager converterManager,
@@ -66,67 +64,5 @@ namespace Microsoft.Azure.WebJobs.Host.Indexers
             bindingProviderAccessor.SetValue(bindingProvider);
             return bindingProvider;
         }
-
-        // $$$
-        public void Initialize(ExtensionConfigContext context)
-        {
-            throw new NotImplementedException();
-        }
-#if false
-        // $$$
-        protected internal Task InitializeAsync(JobHostConfiguration config, JObject hostMetadata)
-        {
-            if (hostMetadata == null)
-            {
-                return Task.FromResult(0);
-            }
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            // $$$ We should be albe to use some reflection to collapse this. 
-            // $$$ Copied from Script c:\dev\afunc\script2\src\webjobs.script\binding\webjobscorescriptbindingprovider.cs
-            JObject configSection = (JObject)hostMetadata["queues"];
-            JToken value = null;
-            if (configSection != null)
-            {
-                if (configSection.TryGetValue("maxPollingInterval", out value))
-                {
-                    config.Queues.MaxPollingInterval = TimeSpan.FromMilliseconds((int)value);
-                }
-                if (configSection.TryGetValue("batchSize", out value))
-                {
-                    config.Queues.BatchSize = (int)value;
-                }
-                if (configSection.TryGetValue("maxDequeueCount", out value))
-                {
-                    config.Queues.MaxDequeueCount = (int)value;
-                }
-                if (configSection.TryGetValue("newBatchThreshold", out value))
-                {
-                    config.Queues.NewBatchThreshold = (int)value;
-                }
-                if (configSection.TryGetValue("visibilityTimeout", out value))
-                {
-                    config.Queues.VisibilityTimeout = TimeSpan.Parse((string)value, CultureInfo.InvariantCulture);
-                }
-            }
-
-            // Apply Blobs configuration
-            config.Blobs.CentralizedPoisonQueue = true;   // TEMP : In the next release we'll remove this and accept the core SDK default
-            configSection = (JObject)hostMetadata["blobs"];
-            value = null;
-            if (configSection != null)
-            {
-                if (configSection.TryGetValue("centralizedPoisonQueue", out value))
-                {
-                    config.Blobs.CentralizedPoisonQueue = (bool)value;
-                }
-            }
-
-            return Task.FromResult(0);
-        }
-#endif
     }
 }

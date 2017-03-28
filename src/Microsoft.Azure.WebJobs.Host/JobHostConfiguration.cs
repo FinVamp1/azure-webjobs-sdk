@@ -7,12 +7,12 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.Bindings;
+using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Host.Indexers;
 using Microsoft.Azure.WebJobs.Host.Loggers;
 using Microsoft.Azure.WebJobs.Host.Queues;
 using Microsoft.Azure.WebJobs.Host.Timers;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs
 {
@@ -358,6 +358,16 @@ namespace Microsoft.Azure.WebJobs
         public void AddService<TService>(TService serviceInstance)
         {
             AddService(typeof(TService), serviceInstance);
+        }
+
+        /// <summary>
+        /// Add an extension to register new binding attributes and converters.
+        /// </summary>
+        /// <param name="extension"></param>
+        public void AddExtension(IExtensionConfigProvider extension)
+        {
+            var exts = this.GetExtensions();
+            exts.RegisterExtension<IExtensionConfigProvider>(extension);
         }
 
         /// <summary>

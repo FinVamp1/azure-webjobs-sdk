@@ -21,7 +21,7 @@ namespace Microsoft.Azure.WebJobs.Host
         // Map from binding types to their corresponding attribute. 
         private readonly IDictionary<string, Type> _attributeTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
-        // Map of assembly name to assembly.
+        // Map of simple assembly name to assembly.
         private readonly Dictionary<string, Assembly> _resolvedAssemblies = new Dictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
 
         private readonly JobHostConfiguration _config;
@@ -58,19 +58,21 @@ namespace Microsoft.Azure.WebJobs.Host
             var converter = this._config.GetService<IConverterManager>() as ConverterManager;
             if (converter != null)
             {
-                converter.AddAssemblies(this._resolvedAssemblies);
+                converter.AddAssemblies(this.AddAssembly);
             }
         }
 
+        // Resolve an assembly from the given name. 
+        // Name could be the short name or full name. 
+        //    Name
+        //    Name, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
         public Assembly TryResolveAssembly(string assemblyName)
-        {
-            // Name
-            // Name, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-
+        {            
+            // Give precedence to the full name. This can be important if multiple assemblies are loaded side-by-side.
             Assembly assembly;
             if (!_resolvedAssemblies.TryGetValue(assemblyName, out assembly))
             {
-                // If we're passed in the full name, compare just the name. 
+                // If full name fails, try on just the short name. 
                 var nameOnly = new AssemblyName(assemblyName).Name;
                 _resolvedAssemblies.TryGetValue(nameOnly, out assembly);
             }
@@ -93,9 +95,7 @@ namespace Microsoft.Azure.WebJobs.Host
             }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="extension"></param>
+        // Do extra bookkeeping for a new extension. 
         public void AddExtension(IExtensionConfigProvider extension)
         {
             var attributeTypes = GetAttributesFromExtension(extension);
@@ -105,22 +105,19 @@ namespace Microsoft.Azure.WebJobs.Host
                 this._attributeTypes[bindingName] = attributeType;
             }
 
-            AddAssembly(extension.GetType().Assembly);
-#if false // Does extension really need to customize this? $$$
-            if (extension.ResolvedAssemblies != null)
-            {
-                foreach (var resolvedAssembly in extension.ResolvedAssemblies)
-                {
-                    AddAssembly(resolvedAssembly);
-                }
-            }
-#endif            
+            AddAssembly(extension.GetType());         
+        }
+
+        private void AddAssembly(Type type)
+        {
+            AddAssembly(type.Assembly);
         }
 
         private void AddAssembly(Assembly assembly)
         {
-            string name = assembly.GetName().Name;
-            _resolvedAssemblies[name] = assembly;
+            AssemblyName name = assembly.GetName();
+            _resolvedAssemblies[name.FullName] = assembly;
+            _resolvedAssemblies[name.Name] = assembly;
         }
 
         // By convention, typeof(EventHubAttribute) --> "EventHub"

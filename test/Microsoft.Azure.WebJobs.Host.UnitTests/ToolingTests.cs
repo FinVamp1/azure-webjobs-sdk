@@ -30,8 +30,7 @@ namespace Microsoft.Azure.WebJobs.Host.UnitTests
             
             var ext = new TestExtension();
 
-            var exts = config.GetExtensions();
-            exts.RegisterExtension<IExtensionConfigProvider>(ext);
+            config.AddExtension(ext);
 
             var tooling = await config.GetToolingAsync();
 
@@ -70,39 +69,6 @@ namespace Microsoft.Azure.WebJobs.Host.UnitTests
 
             return attr;
         }
-
-        // Test builint attributes (blob, table, queue) 
-        //[Fact]
-        public async Task Builtins()
-        {
-            JobHostConfiguration config = TestHelpers.NewConfig();
-
-            var ext = new TestExtension();
-
-            // Still need to call Add on the default since that provides a means to pass in config. 
-            var exts = config.GetExtensions();
-            exts.RegisterExtension<IExtensionConfigProvider>(new DefaultBindingProvider());
-
-            var tooling = await config.GetToolingAsync();
-
-            Dictionary<string, Type> builtins = new Dictionary<string, Type>
-            {
-                {  "Blob", typeof(BlobAttribute) },
-                {  "BlobTrigger", typeof(BlobTriggerAttribute) },
-                {  "Table", typeof(TableAttribute) },
-                {  "Queue", typeof(QueueAttribute) },
-                {  "QueueTrigger", typeof(QueueTriggerAttribute) }
-            };
-            foreach (var kv in builtins)
-            {
-                var typeName = kv.Key;
-                var expectedType = kv.Value;
-
-                var actualType = tooling.GetAttributeTypeFromName(typeName);
-                Assert.Equal(expectedType, actualType);
-            }
-        }
-
 
         [Fact]
         public async Task AttrBuilder()

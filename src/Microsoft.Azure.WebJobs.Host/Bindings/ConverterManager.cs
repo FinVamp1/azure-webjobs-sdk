@@ -48,7 +48,7 @@ namespace Microsoft.Azure.WebJobs
         // resolve assemblies. 
         // The attribute type always points to the extension's assembly. 
         // Whereas some of the Src,Dest types will point to the resource's "native sdk"
-        internal void AddAssemblies(Dictionary<string, Assembly> resolvedAssemblies)
+        internal void AddAssemblies(Action<Type> funcAddType)
         {
             foreach (var func in _funcsWithAttr.Values)
             {
@@ -60,18 +60,11 @@ namespace Microsoft.Azure.WebJobs
                     {
                         foreach (var genericArg in t.GetGenericArguments())
                         {
-                            AddAssemblies(genericArg, resolvedAssemblies);
+                            funcAddType(genericArg);
                         }
                     }
                 }
             }
-        }
-
-        private static void AddAssemblies(Type type, Dictionary<string, Assembly> resolvedAssemblies)
-        {
-            var assembly = type.Assembly;
-            string name = assembly.GetName().Name;
-            resolvedAssemblies[name] = assembly;
         }
 
         private Func<Type, Type, Func<object, object>> TryGetOpenConverter(Type typeSource, Type typeDest, Type typeAttribute)
