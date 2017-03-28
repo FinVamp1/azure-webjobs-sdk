@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Executors;
-using Microsoft.Azure.WebJobs.Host.Extensions;
 using Microsoft.Azure.WebJobs.Host.Indexers;
 using Microsoft.Azure.WebJobs.Host.Loggers;
 using Microsoft.Azure.WebJobs.Host.Queues;
@@ -62,7 +61,8 @@ namespace Microsoft.Azure.WebJobs
             Singleton = new SingletonConfiguration();
 
             // add our built in services here
-            IExtensionRegistry extensions = new DefaultExtensionRegistry();
+            _tooling = new Tooling(this);
+            IExtensionRegistry extensions = new DefaultExtensionRegistry(_tooling);
             ITypeLocator typeLocator = new DefaultTypeLocator(ConsoleProvider.Out, extensions);
             IConverterManager converterManager = new ConverterManager();
             IWebJobsExceptionHandler exceptionHandler = new WebJobsExceptionHandler();
@@ -79,9 +79,7 @@ namespace Microsoft.Azure.WebJobs
             AddService<IWebJobsExceptionHandler>(exceptionHandler);
 
             string value = ConfigurationUtility.GetSettingFromConfigOrEnvironment(Constants.EnvironmentSettingName);
-            IsDevelopment = string.Compare(Constants.DevelopmentEnvironmentValue, value, StringComparison.OrdinalIgnoreCase) == 0;
-
-            _tooling = new Tooling(this);
+            IsDevelopment = string.Compare(Constants.DevelopmentEnvironmentValue, value, StringComparison.OrdinalIgnoreCase) == 0;            
         }
 
         /// <summary>
@@ -363,16 +361,7 @@ namespace Microsoft.Azure.WebJobs
         }
 
         /// <summary>
-        /// </summary>
-        /// <param name="extension"></param>
-        /// <param name="hostMetadata"></param>
-        public async Task AddExtensionAsync(ExtensionBase extension, JObject hostMetadata)
-        {
-            await _tooling.AddExtensionAsync(extension, hostMetadata);
-        }
-
-        /// <summary>
-        /// $$$
+        /// Get a tooling interface for inspecting current extensions. 
         /// </summary>
         /// <returns></returns>
         public Task<ITooling> GetToolingAsync()
@@ -382,7 +371,7 @@ namespace Microsoft.Azure.WebJobs
 
             _tooling.Init(provider);
 
-            // $$$ Ensure all extensiosn have been called 
+            // Ensure all extensions have been called 
             return Task.FromResult<ITooling>(_tooling);
         }
     }

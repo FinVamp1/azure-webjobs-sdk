@@ -10,17 +10,14 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host.Bindings;
-using Microsoft.Azure.WebJobs.Host.Extensions;
+using Microsoft.Azure.WebJobs.Host.Config;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Host
 {
+    // Provides additional bookkeeping on extensions 
     internal class Tooling : ITooling
     {
-        private readonly List<ExtensionBase> _extensionList = new List<ExtensionBase>();
-        // Mapping from Attribute type to extension. 
-        private readonly IDictionary<Type, ExtensionBase> _extensions = new Dictionary<Type, ExtensionBase>();
-
         // Map from binding types to their corresponding attribute. 
         private readonly IDictionary<string, Type> _attributeTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
@@ -53,14 +50,6 @@ namespace Microsoft.Azure.WebJobs.Host
             _config = config;
         }
 
-        public IEnumerable<ExtensionBase> Extensions
-        {
-            get
-            {
-                return _extensionList;
-            }
-        }
-
         internal void Init(IBindingProvider root)
         {
             this._root = root;
@@ -88,31 +77,44 @@ namespace Microsoft.Azure.WebJobs.Host
             return assembly;
         }
 
+        // Get all the binding attributes from a given extension. 
+        private IEnumerable<Type> GetAttributesFromExtension(IExtensionConfigProvider extension)
+        {
+            var asm = extension.GetType().Assembly;
+            foreach (var type in asm.GetExportedTypes())
+            {
+                if (typeof(Attribute).IsAssignableFrom(type))
+                {
+                    if (type.GetCustomAttribute(typeof(BindingAttribute)) != null)
+                    {
+                        yield return type;
+                    }                    
+                }
+            }
+        }
+
         /// <summary>
         /// </summary>
         /// <param name="extension"></param>
-        /// <param name="hostMetadata"></param>
-        public async Task AddExtensionAsync(ExtensionBase extension, JObject hostMetadata)
+        public void AddExtension(IExtensionConfigProvider extension)
         {
-            var attributeTypes = extension.ExposedAttributes;
+            var attributeTypes = GetAttributesFromExtension(extension);
             foreach (var attributeType in attributeTypes)
             {
                 string bindingName = GetNameFromAttribute(attributeType);
                 this._attributeTypes[bindingName] = attributeType;
-                this._extensions[attributeType] = extension;
             }
 
             AddAssembly(extension.GetType().Assembly);
+#if false // Does extension really need to customize this? $$$
             if (extension.ResolvedAssemblies != null)
             {
                 foreach (var resolvedAssembly in extension.ResolvedAssemblies)
                 {
                     AddAssembly(resolvedAssembly);
                 }
-            }            
-
-            _extensionList.Add(extension);
-            await extension.InitializeAsync(_config, hostMetadata);
+            }
+#endif            
         }
 
         private void AddAssembly(Assembly assembly)
@@ -164,7 +166,7 @@ namespace Microsoft.Azure.WebJobs.Host
         // Handle touchups where automatically conversion would break. 
         // $$$ Ideally get rid of this method by either 
         // a) removing the inconsistencies
-        // b) having some hook tha tlets the extension handle it. 
+        // b) having some hook that lets the extension handle it. 
         private static void Touchups(Type attributeType, JObject metadata, List<Attribute> list)
         {
             JToken token;

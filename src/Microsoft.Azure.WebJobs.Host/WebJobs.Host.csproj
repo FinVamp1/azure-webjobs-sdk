@@ -400,11 +400,12 @@
     <Compile Include="Blobs\Listeners\IBlobScanInfoManager.cs" />
     <Compile Include="Blobs\Listeners\StorageBlobScanInfoManager.cs" />
     <Compile Include="Blobs\StorageBlobToCloudAppendBlobConverter.cs" />
+    <Compile Include="Config\BindingAttribute.cs" />
+    <Compile Include="Config\FluentBindingRule.cs" />
     <Compile Include="Config\ServiceProviderWrapper.cs" />
     <Compile Include="DefaultNameResolver.cs" />
     <Compile Include="Diagnostics\ExceptionFormatter.cs" />
     <Compile Include="Executors\FunctionInstanceTraceWriter.cs" />
-    <Compile Include="Extensions\ExtensionBase.cs" />
     <Compile Include="Extensions\ITooling.cs" />
     <Compile Include="Extensions\Tooling.cs" />
     <Compile Include="FuncConverter.cs" />

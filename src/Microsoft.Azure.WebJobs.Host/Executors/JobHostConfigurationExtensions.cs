@@ -328,6 +328,7 @@ namespace Microsoft.Azure.WebJobs.Host.Executors
             foreach (IExtensionConfigProvider configProvider in configProviders)
             {
                 configProvider.Initialize(context);
+                context.Flush();
             }
         }
 

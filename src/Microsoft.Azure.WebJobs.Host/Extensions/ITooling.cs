@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Microsoft.Azure.WebJobs.Host.Extensions;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Host
@@ -15,11 +13,6 @@ namespace Microsoft.Azure.WebJobs.Host
     /// </summary>
     public interface ITooling
     {
-        /// <summary>
-        /// GEt the list of registered extensions 
-        /// </summary>
-        IEnumerable<ExtensionBase> Extensions { get; }
-
         /// <summary>
         /// "Blob" --> typeof(BlobAttribute)
         /// </summary>

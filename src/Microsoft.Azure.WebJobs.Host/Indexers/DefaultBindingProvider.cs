@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs.Host.Bindings;
 using Microsoft.Azure.WebJobs.Host.Bindings.Cancellation;
 using Microsoft.Azure.WebJobs.Host.Bindings.Data;
@@ -12,35 +10,17 @@ using Microsoft.Azure.WebJobs.Host.Bindings.Runtime;
 using Microsoft.Azure.WebJobs.Host.Bindings.StorageAccount;
 using Microsoft.Azure.WebJobs.Host.Blobs;
 using Microsoft.Azure.WebJobs.Host.Blobs.Bindings;
+using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Azure.WebJobs.Host.Executors;
-using Microsoft.Azure.WebJobs.Host.Extensions;
 using Microsoft.Azure.WebJobs.Host.Queues;
 using Microsoft.Azure.WebJobs.Host.Queues.Bindings;
 using Microsoft.Azure.WebJobs.Host.Tables;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Host.Indexers
 {
     // Extension representing  builtin types. 
-    internal class DefaultBindingProvider : ExtensionBase
+    internal class DefaultBindingProvider : IExtensionConfigProvider
     {
-        private static readonly Type[] BuiltinAttributes = new Type[] 
-        {
-            typeof(QueueAttribute),
-            typeof(QueueTriggerAttribute),
-            typeof(TableAttribute),
-            typeof(BlobAttribute),
-            typeof(BlobTriggerAttribute)
-        };
-
-        public override IEnumerable<Type> ExposedAttributes
-        {
-            get
-            {
-                return BuiltinAttributes;
-            }
-        }
-
         // $$$ for full consistency, this should be in the Initialize method. 
         public static IBindingProvider Create(
             INameResolver nameResolver,
@@ -87,7 +67,14 @@ namespace Microsoft.Azure.WebJobs.Host.Indexers
             return bindingProvider;
         }
 
-        protected internal override Task InitializeAsync(JobHostConfiguration config, JObject hostMetadata)
+        // $$$
+        public void Initialize(ExtensionConfigContext context)
+        {
+            throw new NotImplementedException();
+        }
+#if false
+        // $$$
+        protected internal Task InitializeAsync(JobHostConfiguration config, JObject hostMetadata)
         {
             if (hostMetadata == null)
             {
@@ -140,5 +127,6 @@ namespace Microsoft.Azure.WebJobs.Host.Indexers
 
             return Task.FromResult(0);
         }
+#endif
     }
 }
